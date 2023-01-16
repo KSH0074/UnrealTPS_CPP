@@ -2,6 +2,10 @@
 
 
 #include "TPSPlayer.h"
+#include "PlayerAnim.h"
+#include <GameFramework/CharacterMovementComponent.h>
+#include "EnemyFSM.h"
+#include "TPSProject.h"
 #include <GameFramework/SpringArmComponent.h>
 #include <Camera/CameraComponent.h>
 #include "bullet.h"
@@ -14,7 +18,7 @@ ATPSPlayer::ATPSPlayer()
 	PrimaryActorTick.bCanEverTick = true;
 
 	//스켈레탈 메시 데이터 불러오기
-	ConstructorHelpers::FObjectFinder<USkeletalMesh> TempMesh(TEXT("SkeletalMesh'/Game/Mannequin/Character/Mesh/SK_Mannequin.SK_Mannequin'"));
+	ConstructorHelpers::FObjectFinder<USkeletalMesh> TempMesh(TEXT("SkeletalMesh'/Game/AnimStarterPack/UE4_Mannequin/Mesh/SK_Mannequin.SK_Mannequin'"));
 	if (TempMesh.Succeeded())
 	{
 		GetMesh()->SetSkeletalMesh(TempMesh.Object);
@@ -36,22 +40,25 @@ ATPSPlayer::ATPSPlayer()
 
 	JumpMaxCount = 3;
 
-	gunMeshComp = CreateDefaultSubobject<USkeletalMeshComponent>(TEXT("GunMeshComp"));
-	gunMeshComp->SetupAttachment(GetMesh());
+	gunComp = CreateDefaultSubobject<USkeletalMeshComponent>(TEXT("GunMeshComponent"));
+	gunComp->SetupAttachment(GetMesh(),TEXT("GunSocket"));
 	ConstructorHelpers::FObjectFinder<USkeletalMesh> TempGunMesh(TEXT("SkeletalMesh'/Game/FPWeapon/Mesh/SK_FPGun.SK_FPGun'"));
 	if (TempGunMesh.Succeeded())
 	{
-		gunMeshComp->SetSkeletalMesh(TempGunMesh.Object);
-		gunMeshComp->SetRelativeLocation(FVector(-14, 52, 120));
+		gunComp->SetSkeletalMesh(TempGunMesh.Object);
+		gunComp->SetRelativeLocation(FVector(-17, 10, -3));
+		gunComp->SetRelativeRotation(FRotator(0, 90, 0));
 	}
-	sniperGunComp = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("SniperGunComp"));
-	sniperGunComp->SetupAttachment(GetMesh());
+
+	sniperComp = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("SniperGunComponent"));
+	sniperComp->SetupAttachment(GetMesh(),TEXT("GunSocket"));
 	ConstructorHelpers::FObjectFinder<UStaticMesh> TempSniperGunMesh(TEXT("StaticMesh'/Game/SniperGun/sniper1.sniper1'")); // staticMeshComponent 말고 staticMesh로 ...
 	if (TempSniperGunMesh.Succeeded())
 	{
-		sniperGunComp->SetStaticMesh(TempSniperGunMesh.Object);
-		sniperGunComp->SetRelativeLocation(FVector(-22, 55, 120));
-		sniperGunComp->SetRelativeScale3D(FVector(0.15f));
+		sniperComp->SetStaticMesh(TempSniperGunMesh.Object);
+		sniperComp->SetRelativeLocation(FVector(-42, 7, 1));
+		sniperComp->SetRelativeRotation(FRotator(0, 90, 0));
+		sniperComp->SetRelativeScale3D(FVector(0.15f));
 	}
 	
 	ConstructorHelpers::FClassFinder<ABullet> TempBullet(TEXT("Blueprint'/Game/Blueprint/BP_Bullet.BP_Bullet_C'"));
@@ -63,7 +70,13 @@ ATPSPlayer::ATPSPlayer()
 	if (TempSniperUI.Succeeded())
 	{
 		sniperUIFactory = TempSniperUI.Class;
-		
+	}
+
+	//get Sound 
+	ConstructorHelpers::FObjectFinder<USoundBase> tempSound(TEXT("SoundWave'/Game/SniperGun/Rifle.Rifle'"));
+	if (tempSound.Succeeded())
+	{
+		bulletSound = tempSound.Object;
 	}
 }
 
@@ -71,9 +84,20 @@ ATPSPlayer::ATPSPlayer()
 void ATPSPlayer::BeginPlay()
 {
 	Super::BeginPlay();
-	_sniperUI = CreateWidget(GetWorld(), sniperUIFactory);
 
-	ChangeToSniperGun();//default
+	//초기 속도 is 걷기 
+	GetCharacterMovement()->MaxWalkSpeed = walkSpeed;
+
+
+	_sniperUI = CreateWidget(GetWorld(), sniperUIFactory); // 블루프린트의 sniperUIFactory에 등록된 BP 스나이퍼 UI를 만들어서 추가한다, 
+
+	//위와 같다 
+	CrosshairUIWidget = CreateWidget(GetWorld(), crosshairUIFactory);
+	//뷰포트에 추가한다
+	CrosshairUIWidget->AddToViewport();
+
+	//기본으로 스나이퍼가 먼저사용하도록 설정됨
+	ChangeToSniperGun();
 }
 
 // Called every frame
@@ -98,6 +122,8 @@ void ATPSPlayer::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent
 	PlayerInputComponent->BindAction(TEXT("SniperGun"), IE_Pressed, this, &ATPSPlayer::ChangeToSniperGun);
 	PlayerInputComponent->BindAction(TEXT("Sniper"), IE_Pressed, this, &ATPSPlayer::SniperAim);
 	PlayerInputComponent->BindAction(TEXT("Sniper"), IE_Released, this, &ATPSPlayer::SniperAim);
+	PlayerInputComponent->BindAction(TEXT("Run"), IE_Pressed, this, &ATPSPlayer::InputRun);
+	PlayerInputComponent->BindAction(TEXT("Run"), IE_Released, this, &ATPSPlayer::InputRun);
 	
 
 }
@@ -146,15 +172,22 @@ void ATPSPlayer::Move()
 
 void ATPSPlayer::InputFire()
 {
+	UGameplayStatics::PlaySound2D(GetWorld(), bulletSound);
+	//카메라 shake 
+	APlayerController* controller = GetWorld()->GetFirstPlayerController();
+	controller->PlayerCameraManager->StartCameraShake(cameraShake);
+
 	if (bUsingGrenadeGun)
 	{
-		FTransform firePosition = gunMeshComp->GetSocketTransform(TEXT("Fireposition"));
+		FTransform firePosition = gunComp -> GetSocketTransform(TEXT("Fireposition"));
 		GetWorld()->SpawnActor<ABullet>(bulletFactory, firePosition);
 	}
 	else
 	{
+		UPlayerAnim* anim = Cast<UPlayerAnim>(GetMesh()->GetAnimInstance());
+		anim->PlayAttackAnim();
 		FVector startPos = tpsCamComp->GetComponentLocation(); //WorldSpace Return
-		FVector endPos = startPos + tpsCamComp->GetForwardVector() * 5000.0f;
+		FVector endPos = startPos + tpsCamComp->GetForwardVector() * 50000.0f;
 
 		//충돌정보 변수
 		FHitResult hitInfo;
@@ -176,6 +209,17 @@ void ATPSPlayer::InputFire()
 					FVector force = hitInfo.ImpactNormal* -1 * hitComp->GetMass() * 500000.0f;
 					hitComp->AddForce(force);
 			}
+			UObject* enemy = hitInfo.GetActor()->GetDefaultSubobjectByName("FSM");//CreateDefaultSubObject()에서 넣어준 이름 반환
+			if (enemy != nullptr)
+			{
+				UEnemyFSM* enemyFSM = Cast<UEnemyFSM>(enemy);
+				enemyFSM->OnDamageProcess();
+				UE_LOG(TPS, Warning, TEXT("Hit"));
+			}
+			
+			
+		//	UE_LOG(TPS, Warning, TEXT("%s"), *hitInfo.GetActor()->GetName());
+			
 		}
 	}
 	
@@ -184,15 +228,15 @@ void ATPSPlayer::InputFire()
 void ATPSPlayer::ChangeToGrenadeGun()
 {
 	bUsingGrenadeGun = true;
-	sniperGunComp->SetVisibility(false);
-	gunMeshComp->SetVisibility(true);
+	sniperComp->SetVisibility(false);
+	gunComp->SetVisibility(true);
 }
 
 void ATPSPlayer::ChangeToSniperGun()
 {
 	bUsingGrenadeGun = false;
-	sniperGunComp->SetVisibility(true);
-	gunMeshComp->SetVisibility(false);
+	sniperComp->SetVisibility(true);
+	gunComp->SetVisibility(false);
 }
 
 void ATPSPlayer::SniperAim()
@@ -206,12 +250,31 @@ void ATPSPlayer::SniperAim()
 		bSniperAim = true;
 		_sniperUI ->AddToViewport();
 		tpsCamComp->SetFieldOfView(45.0f);
+
+		//일반존준 제거 
+		CrosshairUIWidget->RemoveFromParent();
 	}
 	else
 	{
 		bSniperAim = false;
 		_sniperUI->RemoveFromParent();
 		tpsCamComp->SetFieldOfView(90.0f);
+		CrosshairUIWidget->AddToViewport();
 	}
+}
+
+void ATPSPlayer::InputRun()
+{
+	UCharacterMovementComponent* movement = GetCharacterMovement();
+
+	if (movement->MaxWalkSpeed > walkSpeed)
+	{
+		movement->MaxWalkSpeed = walkSpeed;
+	}
+	else
+	{
+		movement->MaxWalkSpeed = runSpeed;
+	}
+	
 }
 

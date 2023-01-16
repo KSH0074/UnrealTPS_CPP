@@ -38,7 +38,9 @@ public:
 	void LookUp(float value);
 
 	UPROPERTY(EditAnyWhere, Category = PlayerSetting)
-		float walkSpeed = 600;
+		float walkSpeed = 200;
+	UPROPERTY(EditAnyWhere, Category = PlayerSetting)
+		float runSpeed = 600;
 	FVector direction;
 
 	void InputHorizontal(float value);
@@ -48,11 +50,13 @@ public:
 	void InputFire();
 	
 	UPROPERTY(VisibleAnywhere, Category = GunMesh)
-		class USkeletalMeshComponent* gunMeshComp;
+		class USkeletalMeshComponent* gunComp;
+	
 	UPROPERTY(EditDefaultsOnly, Category = BulletFactory)
 		TSubclassOf<class ABullet> bulletFactory; // Default 만들기 
+	
 	UPROPERTY(VisibleAnywhere, Category = GunMesh)
-		class UStaticMeshComponent* sniperGunComp;
+		class UStaticMeshComponent* sniperComp;
 	
 	bool bUsingGrenadeGun= true;
 	void ChangeToGrenadeGun();
@@ -67,4 +71,20 @@ public:
 
 	UPROPERTY(EditAnywhere,Category=BulletEffect)
 	UParticleSystem* bulletEffectFactory;
+
+	//일반조준
+	UPROPERTY(EditDefaultsOnly, Category = SniperUI)
+	TSubclassOf<class UUserWidget> crosshairUIFactory;
+	//크로스헤어 인스턴스
+	class UUserWidget* CrosshairUIWidget;
+
+	void InputRun();
+
+	//카메라 셰이크 BP 저장 변수 
+	UPROPERTY(EditDefaultsOnly, Category = CameraMotion)
+		TSubclassOf<class UCameraShakeBase> cameraShake;
+
+	//Gun fire sound
+	UPROPERTY(EditDefaultsOnly, Category = Sound)
+		class USoundBase* bulletSound;
 };
