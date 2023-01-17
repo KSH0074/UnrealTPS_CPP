@@ -3,32 +3,32 @@
 
 #include "Enemy.h"
 #include "EnemyFSM.h"
-
+#include "TPSProject.h"
 // Sets default values
 AEnemy::AEnemy()
 {
  	// Set this character to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = true;
 
-	ConstructorHelpers::FObjectFinder<USkeletalMesh> tempMesh(TEXT("SkeletalMesh'/Game/Mannequin/Character/Mesh/SK_Mannequin_Female.SK_Mannequin_Female'")); //오브젝트를 찾는다
+	ConstructorHelpers::FObjectFinder<USkeletalMesh> tempMesh(TEXT("SkeletalMesh'/Game/Enemy/Model/vampire_a_lusth.vampire_a_lusth'")); //오브젝트를 찾는다
 	//성공할 경우
 	if (tempMesh.Succeeded())
 	{
 		GetMesh()->SetSkeletalMesh(tempMesh.Object);
 		GetMesh()->SetRelativeLocationAndRotation(FVector(0,0,-88),FRotator(0,-90,0));
-		//UE_LOG(TPS, Warning, TEXT("Set Mesh default Setting "));
+		UE_LOG(TPS, Warning, TEXT("Set Mesh default Setting "));
+		GetMesh()->SetRelativeScale3D(FVector(0.84f));
 	}
 	//컴포넌트 추가 
 	
-	fsmComp2 = CreateDefaultSubobject<UEnemyFSM>(TEXT("FSM")); 
+	fsmComp = CreateDefaultSubobject<UEnemyFSM>(TEXT("FSM")); //FSM => Finit State Machine
 	
-}
-
-// Called when the game starts or when spawned
-void AEnemy::BeginPlay()
-{
-	Super::BeginPlay();
-	
+	//애니메이션 블루프린트 할당 
+	ConstructorHelpers::FClassFinder<UAnimInstance> tempClass(TEXT("AnimBlueprint'/Game/Blueprint/ABP_Enemy.ABP_Enemy_C'")); // _C 가 있어야 블루프린트 클래스로 인식
+	if (tempClass.Succeeded())
+	{
+		GetMesh()->SetAnimInstanceClass(tempClass.Class);
+	}
 }
 
 // Called every frame

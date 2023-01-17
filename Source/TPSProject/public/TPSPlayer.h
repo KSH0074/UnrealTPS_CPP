@@ -30,7 +30,7 @@ public:
 	UPROPERTY(VisibleAnywhere, Category = Camera)
 		class USpringArmComponent* springArmComp;
 	UPROPERTY(VisibleAnywhere, BluePrintReadOnly,Category = Camera)
-		class UCameraComponent* tpsCamComp;
+		class UCameraComponent* tpsCamComponent;
 
 	//좌우 회전입력처리
 	void Turn(float value);
@@ -66,7 +66,8 @@ public:
 	bool bSniperAim = false;
 	UPROPERTY(EditDefaultsOnly, Category = SniperUI)
 		TSubclassOf<class UUserWidget> sniperUIFactory;// Default 만들기 
-	
+
+	UPROPERTY(EditDefaultsOnly, Category = SniperUI) // 이거 안하면 갈뷔지 게임 처리당함 
 	class UUserWidget* _sniperUI;
 
 	UPROPERTY(EditAnywhere,Category=BulletEffect)

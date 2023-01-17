@@ -17,7 +17,12 @@ public:
 
 protected:
 	// Called when the game starts or when spawned
-	virtual void BeginPlay() override;
+	// Called when the game starts or when spawned
+	virtual void BeginPlay() override
+	{
+		Super::BeginPlay();
+
+	}
 
 public:	
 	// Called every frame
@@ -28,5 +33,5 @@ public:
 
 public:
 	UPROPERTY(VisibleAnywhere,BlueprintReadOnly, Category = FSMComponent)
-	class UEnemyFSM* fsmComp2;
+	class UEnemyFSM* fsmComp;
 };

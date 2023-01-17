@@ -33,9 +33,9 @@ ATPSPlayer::ATPSPlayer()
 	springArmComp->bUsePawnControlRotation = true;
 
 	
-	tpsCamComp = CreateDefaultSubobject<UCameraComponent>(TEXT("TpsCamComp"));
-	tpsCamComp->SetupAttachment(springArmComp);
-	tpsCamComp->bUsePawnControlRotation = false;
+	tpsCamComponent = CreateDefaultSubobject<UCameraComponent>(TEXT("TpsCamComp"));
+	tpsCamComponent->SetupAttachment(springArmComp);
+	tpsCamComponent->bUsePawnControlRotation = false;
 	bUseControllerRotationYaw = true;
 
 	JumpMaxCount = 3;
@@ -117,7 +117,7 @@ void ATPSPlayer::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent
 	PlayerInputComponent->BindAxis(TEXT("Horizontal"), this, &ATPSPlayer::InputHorizontal);
 	PlayerInputComponent->BindAxis(TEXT("Vertical"), this, &ATPSPlayer::InputVertical);
 	PlayerInputComponent->BindAction(TEXT("Jump"),IE_Pressed ,this, &ATPSPlayer::InputJump);
-	PlayerInputComponent->BindAction(TEXT("Fire"),IE_Pressed ,this, &ATPSPlayer::InputFire);
+	PlayerInputComponent->BindAction(TEXT("Fire"), IE_Pressed,this, &ATPSPlayer::InputFire);
 	PlayerInputComponent->BindAction(TEXT("GrenadeGun"), IE_Pressed, this, &ATPSPlayer::ChangeToGrenadeGun);
 	PlayerInputComponent->BindAction(TEXT("SniperGun"), IE_Pressed, this, &ATPSPlayer::ChangeToSniperGun);
 	PlayerInputComponent->BindAction(TEXT("Sniper"), IE_Pressed, this, &ATPSPlayer::SniperAim);
@@ -172,6 +172,7 @@ void ATPSPlayer::Move()
 
 void ATPSPlayer::InputFire()
 {
+	//사운드 재생ㅇ
 	UGameplayStatics::PlaySound2D(GetWorld(), bulletSound);
 	//카메라 shake 
 	APlayerController* controller = GetWorld()->GetFirstPlayerController();
@@ -186,8 +187,8 @@ void ATPSPlayer::InputFire()
 	{
 		UPlayerAnim* anim = Cast<UPlayerAnim>(GetMesh()->GetAnimInstance());
 		anim->PlayAttackAnim();
-		FVector startPos = tpsCamComp->GetComponentLocation(); //WorldSpace Return
-		FVector endPos = startPos + tpsCamComp->GetForwardVector() * 50000.0f;
+		FVector startPos = tpsCamComponent->GetComponentLocation(); //WorldSpace Return
+		FVector endPos = startPos + tpsCamComponent->GetForwardVector() * 5000000.0f;
 
 		//충돌정보 변수
 		FHitResult hitInfo;
@@ -208,13 +209,14 @@ void ATPSPlayer::InputFire()
 			{
 					FVector force = hitInfo.ImpactNormal* -1 * hitComp->GetMass() * 500000.0f;
 					hitComp->AddForce(force);
+					UE_LOG(TPS, Warning, TEXT("Hit_Box"));;
 			}
 			UObject* enemy = hitInfo.GetActor()->GetDefaultSubobjectByName("FSM");//CreateDefaultSubObject()에서 넣어준 이름 반환
 			if (enemy != nullptr)
 			{
 				UEnemyFSM* enemyFSM = Cast<UEnemyFSM>(enemy);
 				enemyFSM->OnDamageProcess();
-				UE_LOG(TPS, Warning, TEXT("Hit"));
+				UE_LOG(TPS, Warning, TEXT("Hit_Enemy"));
 			}
 			
 			
@@ -239,7 +241,7 @@ void ATPSPlayer::ChangeToSniperGun()
 	gunComp->SetVisibility(false);
 }
 
-void ATPSPlayer::SniperAim()
+void ATPSPlayer::SniperAim() // 여기서 고장나는데 왜 고장나지 
 {
 	if (bUsingGrenadeGun)
 	{
@@ -247,19 +249,24 @@ void ATPSPlayer::SniperAim()
 	}
 	if (bSniperAim == false)
 	{
-		bSniperAim = true;
-		_sniperUI ->AddToViewport();
-		tpsCamComp->SetFieldOfView(45.0f);
+		bSniperAim =true;
+	
+		_sniperUI->AddToViewport();
+		tpsCamComponent->SetFieldOfView(45.0f);
 
-		//일반존준 제거 
+		//일반조준 제거 
 		CrosshairUIWidget->RemoveFromParent();
 	}
 	else
 	{
 		bSniperAim = false;
+		
 		_sniperUI->RemoveFromParent();
-		tpsCamComp->SetFieldOfView(90.0f);
+		
+		tpsCamComponent->SetFieldOfView(90.0f);
+		
 		CrosshairUIWidget->AddToViewport();
+		
 	}
 }
 

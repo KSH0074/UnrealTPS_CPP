@@ -7,6 +7,7 @@
 #include <Kismet/GameplayStatics.h>
 #include "TPSProject.h"
 #include <Components/CapsuleComponent.h>
+#include "EnemyAnim.h"
 // Sets default values for this component's properties
 UEnemyFSM::UEnemyFSM()
 {
@@ -26,7 +27,10 @@ void UEnemyFSM::BeginPlay()
 	 target = Cast<ATPSPlayer>(actor); // actor 를 target으로 형변환 GetActorOf~~가 AActor* 타입으로 반환한걸 
 
 	 me = Cast<AEnemy>(GetOwner());
-	
+	 
+	 //anim 에 사용중인 애니메이션 블루프린트  할당,  
+	 anim = Cast<UEnemyAnim>(me->GetMesh()->GetAnimInstance());
+	 
 }
 
 
@@ -63,6 +67,8 @@ void UEnemyFSM::IdleState()
 	{
 		mState = EEnemyState::Move;
 		currentTIme = 0;
+		//애니메이션 상태 동기화 
+		anim->animState = mState;
 	}
 }
 void UEnemyFSM::MoveState() 
@@ -75,6 +81,13 @@ void UEnemyFSM::MoveState()
 	if (dir.Size() < attackRange)
 	{
 		mState = EEnemyState::Attack;
+		//애니메이션 상태 동기화 
+		anim->animState = mState;
+		//공격 애니메이션 재생 활성화
+		anim->bAttackPlay = true;
+
+		//공격상태 전환 시 대기 시간이 바로 끝나도록 처리..? 뭔가 군더더기같은 코드다 
+		currentTIme = attackDelayTime;
 	}
 
 };
@@ -85,11 +98,14 @@ void UEnemyFSM::AttackState()
 	{
 		PRINT_LOG(TEXT("Attack!!"));
 		currentTIme = 0;
+		anim->bAttackPlay = true;
 	}
 	float distance = FVector::Distance(target->GetActorLocation(), me->GetActorLocation());
 	if (distance > attackRange)
 	{
 		mState = EEnemyState::Move;
+		//애니메이션 상태 동기화 
+		anim->animState = mState;
 	}
 };
 void UEnemyFSM::DamageState() 
@@ -100,6 +116,8 @@ void UEnemyFSM::DamageState()
 	{
 		mState = EEnemyState::Idle;
 		currentTIme = 0;
+		//애니메이션 상태 동기화 
+		anim->animState = mState;
 	}
 };
 void UEnemyFSM::DieState() 
@@ -124,10 +142,18 @@ void UEnemyFSM::OnDamageProcess()
 	if (hp > 0)
 	{
 		mState = EEnemyState::Damage;
+		currentTIme = 0;
+
+		int32 index = FMath::RandRange(0, 1);
+		FString sectionName = FString::Printf(TEXT("Damage%d"), index);
+		anim->PlayDamageAnim(FName(*sectionName));
 	}
 	else
 	{
 		mState = EEnemyState::Die;
 		me->GetCapsuleComponent()->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+
 	}
+	//애니메이션 상태 동기화 
+	anim->animState = mState;
 };
