@@ -8,6 +8,8 @@
 #include "TPSProject.h"
 #include <Components/CapsuleComponent.h>
 #include "EnemyAnim.h"
+#include <AIController.h>
+#include <NavigationSystem.h>
 // Sets default values for this component's properties
 UEnemyFSM::UEnemyFSM()
 {
@@ -30,6 +32,8 @@ void UEnemyFSM::BeginPlay()
 	 
 	 //anim 에 사용중인 애니메이션 블루프린트  할당,  
 	 anim = Cast<UEnemyAnim>(me->GetMesh()->GetAnimInstance());
+	 //AAIController에 할당
+	 ai = Cast<AAIController>(me->GetController());
 	 
 }
 
@@ -65,6 +69,8 @@ void UEnemyFSM::IdleState()
 	currentTIme += GetWorld()->DeltaTimeSeconds;
 	if (currentTIme > idleDelayTime)
 	{
+		//idle -> move 로 상태 변환시 랜덤위치 초기화 
+		GetRandomPositionInNavMesh(me->GetActorLocation(), 500, randomPos);
 		mState = EEnemyState::Move;
 		currentTIme = 0;
 		//애니메이션 상태 동기화 
@@ -75,8 +81,46 @@ void UEnemyFSM::MoveState()
 {
 	FVector destination = target->GetActorLocation(); 
 	FVector dir = destination -  me->GetActorLocation();
-	me->AddMovementInput(dir.GetSafeNormal()*0.5);
+	//me->AddMovementInput(dir.GetSafeNormal()*0.5);
+	//ai->MoveToLocation(destination);
+	
+	//Navigation System 얻어오기 
+	UNavigationSystemV1* ns = UNavigationSystemV1::GetNavigationSystem(GetWorld());
 
+	//목적지 길 찾기 경로 데이터 검색 
+	FPathFindingQuery query;
+	FAIMoveRequest req;
+	
+	//목적지에서 인지할 수 있는 범위 
+	req.SetAcceptanceRadius(3);
+	req.SetGoalLocation(destination);
+	//길 찾기를 위한 쿼리 생성 
+	ai->BuildPathfindingQuery(req, query);
+	//길찾기 결과 가져오기 
+	FPathFindingResult r = ns->FindPathSync(query);
+
+	
+	//목적지까지 길찾기 성공 여부확인 
+	if (r.Result == ENavigationQueryResult::Success)
+	{
+		//타깃으로 이동 
+		ai->MoveToLocation(destination);
+		UE_LOG(TPS, Warning, TEXT("move to taget"));
+	}
+	else
+	{
+		//랜덤위치로 이동 
+		auto result = ai->MoveToLocation(randomPos);
+		UE_LOG(TPS, Warning, TEXT("RandomPos : %s"), *randomPos.ToString());
+		//목적지에 도착하면 
+		if (result == EPathFollowingRequestResult::AlreadyAtGoal)
+		{
+			//새로운 랜덤위치 가져오기 
+			GetRandomPositionInNavMesh(me->GetActorLocation(), 500, randomPos);
+			UE_LOG(TPS, Warning, TEXT("destination set to random"));
+		}
+		UE_LOG(TPS, Warning, TEXT("move to random"));
+	}
 	//목표와 거리가 가까워지면 공격 
 	if (dir.Size() < attackRange)
 	{
@@ -103,6 +147,8 @@ void UEnemyFSM::AttackState()
 	float distance = FVector::Distance(target->GetActorLocation(), me->GetActorLocation());
 	if (distance > attackRange)
 	{
+		//공격하다 타깃이 이도하여 멀어져 상태 변경시 RandPos 초기화 
+		GetRandomPositionInNavMesh(me->GetActorLocation(), 500.0f, randomPos);
 		mState = EEnemyState::Move;
 		//애니메이션 상태 동기화 
 		anim->animState = mState;
@@ -122,6 +168,11 @@ void UEnemyFSM::DamageState()
 };
 void UEnemyFSM::DieState() 
 {
+	//die Anim not done => no Sinking
+	if (anim->bDieDone == false)
+	{
+		return;
+	}
 	//아래로 계속 내려간다 
 	//P = P0 +VT
 	
@@ -152,8 +203,19 @@ void UEnemyFSM::OnDamageProcess()
 	{
 		mState = EEnemyState::Die;
 		me->GetCapsuleComponent()->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+		anim->PlayDamageAnim(TEXT("Die"));
 
 	}
 	//애니메이션 상태 동기화 
 	anim->animState = mState;
-};
+}
+bool UEnemyFSM::GetRandomPositionInNavMesh(FVector centerLocation, float radius, FVector& dest)
+{
+	UNavigationSystemV1* ns = UNavigationSystemV1::GetNavigationSystem(GetWorld());
+	FNavLocation loc;
+	bool result = ns->GetRandomReachablePointInRadius(centerLocation, radius, loc);
+	dest = loc.Location;
+	
+	return result;
+}
+;

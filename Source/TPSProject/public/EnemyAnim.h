@@ -25,5 +25,8 @@ public:
 	//피격애니메이션 재생 함수 
 	UFUNCTION(BlueprintImplementableEvent, Category = FSMEvent) // BlueprintImplementableEvent => 블루프린트에서 구현
 		void PlayDamageAnim(FName sectionName);
+	//Die Anim Play? 
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = FSM)
+	bool bDieDone = false;
 
 };
