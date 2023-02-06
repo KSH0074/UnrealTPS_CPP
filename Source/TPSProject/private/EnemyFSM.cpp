@@ -119,11 +119,20 @@ void UEnemyFSM::MoveState()
 			GetRandomPositionInNavMesh(me->GetActorLocation(), 500, randomPos);
 			UE_LOG(TPS, Warning, TEXT("destination set to random"));
 		}
-		UE_LOG(TPS, Warning, TEXT("move to random"));
+		//갑자기 제자리 걸음 할때 방지 
+		else if (result == EPathFollowingRequestResult::Failed)
+		{
+			UE_LOG(TPS, Warning, TEXT("Move Failed"));
+			GetRandomPositionInNavMesh(me->GetActorLocation(), 500, randomPos);
+		}
+	
 	}
 	//목표와 거리가 가까워지면 공격 
 	if (dir.Size() < attackRange)
 	{
+		//공격시 길찾기 기능정지
+		ai->StopMovement();
+
 		mState = EEnemyState::Attack;
 		//애니메이션 상태 동기화 
 		anim->animState = mState;
@@ -132,6 +141,8 @@ void UEnemyFSM::MoveState()
 
 		//공격상태 전환 시 대기 시간이 바로 끝나도록 처리..? 뭔가 군더더기같은 코드다 
 		currentTIme = attackDelayTime;
+
+		
 	}
 
 };
@@ -208,6 +219,7 @@ void UEnemyFSM::OnDamageProcess()
 	}
 	//애니메이션 상태 동기화 
 	anim->animState = mState;
+	ai->StopMovement();
 }
 bool UEnemyFSM::GetRandomPositionInNavMesh(FVector centerLocation, float radius, FVector& dest)
 {
