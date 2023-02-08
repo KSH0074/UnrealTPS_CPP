@@ -10,6 +10,7 @@
 #include <Camera/CameraComponent.h>
 #include "bullet.h"
 #include <Blueprint/UserWidget.h>
+#include "PlayerMove.h"
 #include <Kismet/GameplayStatics.h>
 // Sets default values
 ATPSPlayer::ATPSPlayer()
@@ -78,6 +79,8 @@ ATPSPlayer::ATPSPlayer()
 	{
 		bulletSound = tempSound.Object;
 	}
+	playerMove = CreateDefaultSubobject<UPlayerMove>(TEXT("PlayerMove"));
+	
 }
 
 // Called when the game starts or when spawned
@@ -85,8 +88,9 @@ void ATPSPlayer::BeginPlay()
 {
 	Super::BeginPlay();
 
+
 	//초기 속도 is 걷기 
-	GetCharacterMovement()->MaxWalkSpeed = walkSpeed;
+	//GetCharacterMovement()->MaxWalkSpeed = walkSpeed;
 
 
 	_sniperUI = CreateWidget(GetWorld(), sniperUIFactory); // 블루프린트의 sniperUIFactory에 등록된 BP 스나이퍼 UI를 만들어서 추가한다, 
@@ -104,71 +108,65 @@ void ATPSPlayer::BeginPlay()
 void ATPSPlayer::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
-	Move();
+	//Move();
 
 }
 
-// Called to bind functionality to input
-void ATPSPlayer::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
+
+void ATPSPlayer::SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent)
 {
 	Super::SetupPlayerInputComponent(PlayerInputComponent);
-	PlayerInputComponent->BindAxis(TEXT("Turn"), this, &ATPSPlayer::Turn);
-	PlayerInputComponent->BindAxis(TEXT("LookUp"), this, &ATPSPlayer::LookUp);
-	PlayerInputComponent->BindAxis(TEXT("Horizontal"), this, &ATPSPlayer::InputHorizontal);
-	PlayerInputComponent->BindAxis(TEXT("Vertical"), this, &ATPSPlayer::InputVertical);
-	PlayerInputComponent->BindAction(TEXT("Jump"),IE_Pressed ,this, &ATPSPlayer::InputJump);
-	PlayerInputComponent->BindAction(TEXT("Fire"), IE_Pressed,this, &ATPSPlayer::InputFire);
+
+	//컴포넌트에서 입력 바인딩 처리하도록 호출 
+	playerMove->SetupInputBinding(PlayerInputComponent);
+
+	//PlayerInputComponent->BindAxis(TEXT("Turn"), this, &ATPSPlayer::Turn);
+	//PlayerInputComponent->BindAxis(TEXT("LookUp"), this, &ATPSPlayer::LookUp);
+	//PlayerInputComponent->BindAxis(TEXT("Horizontal"), this, &ATPSPlayer::InputHorizontal);
+	//PlayerInputComponent->BindAxis(TEXT("Vertical"), this, &ATPSPlayer::InputVertical);
+	//PlayerInputComponent->BindAction(TEXT("Jump"), IE_Pressed, this, &ATPSPlayer::InputJump);
+	//PlayerInputComponent->BindAction(TEXT("Run"), IE_Pressed, this, &ATPSPlayer::InputRun);
+	//PlayerInputComponent->BindAction(TEXT("Run"), IE_Released, this, &ATPSPlayer::InputRun);
+	PlayerInputComponent->BindAction(TEXT("Fire"), IE_Pressed, this, &ATPSPlayer::InputFire);
 	PlayerInputComponent->BindAction(TEXT("GrenadeGun"), IE_Pressed, this, &ATPSPlayer::ChangeToGrenadeGun);
 	PlayerInputComponent->BindAction(TEXT("SniperGun"), IE_Pressed, this, &ATPSPlayer::ChangeToSniperGun);
 	PlayerInputComponent->BindAction(TEXT("Sniper"), IE_Pressed, this, &ATPSPlayer::SniperAim);
 	PlayerInputComponent->BindAction(TEXT("Sniper"), IE_Released, this, &ATPSPlayer::SniperAim);
-	PlayerInputComponent->BindAction(TEXT("Run"), IE_Pressed, this, &ATPSPlayer::InputRun);
-	PlayerInputComponent->BindAction(TEXT("Run"), IE_Released, this, &ATPSPlayer::InputRun);
 	
 
+
 }
-
-void ATPSPlayer::Turn(float value)
-{
-	AddControllerYawInput(value);
-}
-
-void ATPSPlayer::LookUp(float value)
-{
-	AddControllerPitchInput(value);
-}
-
-void ATPSPlayer::InputHorizontal(float value)
-
-{
-	direction.Y = value;
-}
-
-void ATPSPlayer::InputVertical(float value)
-{
-	direction.X = value;
-}
-
-void ATPSPlayer::InputJump()//BindAction Deligate는 매개변수가 없는 듯 
-{
-	Jump();//캐릭터 클래스에 이미 구현된 기능
-}
-
-void ATPSPlayer::Move()
-{
-	
-	
-	direction = FTransform(GetActorRotation()).TransformVector(direction); // 콘트롤러가 아닌 이 액터 기준으로 임의 설정함, 하늘 보면 못 걷는다는게 말이 됨?
-
-	//FVector P0 = GetActorLocation();
-	//FVector Vt = direction * walkSpeed * DeltaTime; //direction * walkSpeed => 방향 * 스칼라 
-	//FVector P = P0 + Vt;
-	//SetActorLocation(P);
-	
-	//UE_LOG(LogTemp, Warning, TEXT("X : %f, Y : %f , Z : %f "), direction.X, direction.Y, direction.Z);
-	AddMovementInput(direction);
-	direction = FVector::ZeroVector;
-}
+//void ATPSPlayer::InputHorizontal(float value)
+//
+//{
+//	direction.Y = value;
+//}
+//
+//void ATPSPlayer::InputVertical(float value)
+//{
+//	direction.X = value;
+//}
+//
+//void ATPSPlayer::InputJump()//BindAction Deligate는 매개변수가 없는 듯 
+//{
+//	Jump();//캐릭터 클래스에 이미 구현된 기능
+//}
+//
+//void ATPSPlayer::Move()
+//{
+//	
+//	
+//	direction = FTransform(GetActorRotation()).TransformVector(direction); // 콘트롤러가 아닌 이 액터 기준으로 임의 설정함, 하늘 보면 못 걷는다는게 말이 됨?
+//
+//	//FVector P0 = GetActorLocation();
+//	//FVector Vt = direction * walkSpeed * DeltaTime; //direction * walkSpeed => 방향 * 스칼라 
+//	//FVector P = P0 + Vt;
+//	//SetActorLocation(P);
+//	
+//	//UE_LOG(LogTemp, Warning, TEXT("X : %f, Y : %f , Z : %f "), direction.X, direction.Y, direction.Z);
+//	AddMovementInput(direction);
+//	direction = FVector::ZeroVector;
+//}
 
 void ATPSPlayer::InputFire()
 {
@@ -270,18 +268,18 @@ void ATPSPlayer::SniperAim() // 여기서 고장나는데 왜 고장나지
 	}
 }
 
-void ATPSPlayer::InputRun()
-{
-	UCharacterMovementComponent* movement = GetCharacterMovement();
-
-	if (movement->MaxWalkSpeed > walkSpeed)
-	{
-		movement->MaxWalkSpeed = walkSpeed;
-	}
-	else
-	{
-		movement->MaxWalkSpeed = runSpeed;
-	}
-	
-}
+//void ATPSPlayer::InputRun()
+//{
+//	UCharacterMovementComponent* movement = GetCharacterMovement();
+//
+//	if (movement->MaxWalkSpeed > walkSpeed)
+//	{
+//		movement->MaxWalkSpeed = walkSpeed;
+//	}
+//	else
+//	{
+//		movement->MaxWalkSpeed = runSpeed;
+//	}
+//	
+//}
 

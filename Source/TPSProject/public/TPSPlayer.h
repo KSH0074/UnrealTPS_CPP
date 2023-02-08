@@ -25,30 +25,17 @@ public:
 	virtual void Tick(float DeltaTime) override;
 
 	// Called to bind functionality to input
+	// Called to bind functionality to input
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
-
 	UPROPERTY(VisibleAnywhere, Category = Camera)
 		class USpringArmComponent* springArmComp;
 	UPROPERTY(VisibleAnywhere, BluePrintReadOnly,Category = Camera)
 		class UCameraComponent* tpsCamComponent;
 
-	//좌우 회전입력처리
-	void Turn(float value);
-	//상하 회전입력처리
-	void LookUp(float value);
-
-	UPROPERTY(EditAnyWhere, Category = PlayerSetting)
-		float walkSpeed = 200;
-	UPROPERTY(EditAnyWhere, Category = PlayerSetting)
-		float runSpeed = 600;
-	FVector direction;
-
-	void InputHorizontal(float value);
-	void InputVertical(float value);
-	void InputJump();
-	void Move();
-	void InputFire();
 	
+
+
+	void InputFire();
 	UPROPERTY(VisibleAnywhere, Category = GunMesh)
 		class USkeletalMeshComponent* gunComp;
 	
@@ -79,7 +66,7 @@ public:
 	//크로스헤어 인스턴스
 	class UUserWidget* CrosshairUIWidget;
 
-	void InputRun();
+	
 
 	//카메라 셰이크 BP 저장 변수 
 	UPROPERTY(EditDefaultsOnly, Category = CameraMotion)
@@ -88,4 +75,9 @@ public:
 	//Gun fire sound
 	UPROPERTY(EditDefaultsOnly, Category = Sound)
 		class USoundBase* bulletSound;
+
+public:
+	//컴포넌트 등록
+	UPROPERTY(VisibleAnywhere, Category = Component)
+	class UPlayerBaseComponent* playerMove;
 };
