@@ -28,56 +28,62 @@ public:
 	// Called to bind functionality to input
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
 	UPROPERTY(VisibleAnywhere, Category = Camera)
-		class USpringArmComponent* springArmComp;
+	class USpringArmComponent* springArmComp;
+
 	UPROPERTY(VisibleAnywhere, BluePrintReadOnly,Category = Camera)
-		class UCameraComponent* tpsCamComponent;
+	class UCameraComponent* tpsCamComponent;
 
 	
+	//void Inputfire();
 
-
-	void InputFire();
-	UPROPERTY(VisibleAnywhere, Category = GunMesh)
-		class USkeletalMeshComponent* gunComp;
-	
-	UPROPERTY(EditDefaultsOnly, Category = BulletFactory)
-		TSubclassOf<class ABullet> bulletFactory; // Default 만들기 
 	
 	UPROPERTY(VisibleAnywhere, Category = GunMesh)
-		class UStaticMeshComponent* sniperComp;
+	class USkeletalMeshComponent* gunComp;
 	
-	bool bUsingGrenadeGun= true;
-	void ChangeToGrenadeGun();
-	void ChangeToSniperGun();
-
-	void SniperAim();
-	bool bSniperAim = false;
-	UPROPERTY(EditDefaultsOnly, Category = SniperUI)
-		TSubclassOf<class UUserWidget> sniperUIFactory;// Default 만들기 
-
-	UPROPERTY(EditDefaultsOnly, Category = SniperUI) // 이거 안하면 갈뷔지 게임 처리당함 
-	class UUserWidget* _sniperUI;
-
-	UPROPERTY(EditAnywhere,Category=BulletEffect)
-	UParticleSystem* bulletEffectFactory;
-
-	//일반조준
-	UPROPERTY(EditDefaultsOnly, Category = SniperUI)
-	TSubclassOf<class UUserWidget> crosshairUIFactory;
-	//크로스헤어 인스턴스
-	class UUserWidget* CrosshairUIWidget;
-
+	//UPROPERTY(EditDefaultsOnly, Category = BulletFactory)
+	//	TSubclassOf<class ABullet> bulletFactory; // Default 만들기 
 	
+	UPROPERTY(VisibleAnywhere, Category = GunMesh)
+	class UStaticMeshComponent* sniperComp;
+	
+	//bool bUsingGrenadeGun= true;
+	//void ChangeToGrenadeGun();
+	//void ChangeToSniperGun();
 
-	//카메라 셰이크 BP 저장 변수 
-	UPROPERTY(EditDefaultsOnly, Category = CameraMotion)
-		TSubclassOf<class UCameraShakeBase> cameraShake;
+	//void SniperAim();
+	//bool bSniperAim = false;
+	//UPROPERTY(EditDefaultsOnly, Category = SniperUI)
+	//	TSubclassOf<class UUserWidget> sniperUIFactory;// Default 만들기 
 
-	//Gun fire sound
-	UPROPERTY(EditDefaultsOnly, Category = Sound)
-		class USoundBase* bulletSound;
+	////스나이퍼 UI위젯 인스턴스
+	//UPROPERTY(EditDefaultsOnly, Category = SniperUI) // 이거 안하면 갈뷔지 게임 처리당함 
+	//class UUserWidget* _sniperUI;
+
+	//UPROPERTY(EditAnywhere,Category=BulletEffect)
+	//UParticleSystem* bulletEffectFactory;
+
+	////일반조준
+	//UPROPERTY(EditDefaultsOnly, Category = SniperUI)
+	//TSubclassOf<class UUserWidget> crosshairUIFactory;
+	////크로스헤어 인스턴스
+	//class UUserWidget* CrosshairUIWidget;
+
+	//
+
+	////카메라 셰이크 BP 저장 변수 
+	//UPROPERTY(EditDefaultsOnly, Category = CameraMotion)
+	//	TSubclassOf<class UCameraShakeBase> cameraShake;
+
+	////Gun fire sound
+	//UPROPERTY(EditDefaultsOnly, Category = Sound)
+	//	class USoundBase* bulletSound;
 
 public:
 	//컴포넌트 등록
 	UPROPERTY(VisibleAnywhere, Category = Component)
 	class UPlayerBaseComponent* playerMove;
+
+	//컴포넌트 등록
+	UPROPERTY(VisibleAnywhere, Category = Component)
+	class UPlayerBaseComponent* playerFire;
 };
