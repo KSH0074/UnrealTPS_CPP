@@ -18,12 +18,15 @@ public:
 	{
 		//필요시에 자식클래스에서 수정, Tick함수가 호출되지 않도록 처리  
 		PrimaryComponentTick.bCanEverTick = false;
+		//Begin Play보다 먼저 호출되는 함수 InitializeComponent 실행하도록 함
+		bWantsInitializeComponent = true;
 	};
-
+	//Begin Play보다 먼저 호출되는 라이프 사이클 함수
+	virtual void InitializeComponent() override;
 protected:
 	// Called when the game starts
 	virtual void BeginPlay() override;
-
+	
 	
 public:	
 	//사용자 입력 매핑 처리함수 
@@ -37,4 +40,6 @@ public:
 
 	UPROPERTY()
 	 UCharacterMovementComponent* moveComp;	
+
+
 };

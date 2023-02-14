@@ -126,6 +126,8 @@ void UPlayerFire::ChangeToGrenadeGun()
 	bUsingGrenadeGun = true;
 	sniperComp->SetVisibility(false);
 	gunComp->SetVisibility(true);
+	//TPSPlayer의 OnUsingGrenade 함수에 전달됨 
+	me->OnUsingGrenade(bUsingGrenadeGun);
 }
 
 void UPlayerFire::ChangeToSniperGun()
@@ -133,6 +135,8 @@ void UPlayerFire::ChangeToSniperGun()
 	bUsingGrenadeGun = false;
 	sniperComp->SetVisibility(true);
 	gunComp->SetVisibility(false);
+	//TPSPlayer의 OnUsingGrenade 함수에 전달됨 
+	me->OnUsingGrenade(bUsingGrenadeGun);
 }
 
 void UPlayerFire::SniperAim() // 여기서 고장나는데 왜 고장나지 

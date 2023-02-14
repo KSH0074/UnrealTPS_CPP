@@ -6,6 +6,7 @@
 #include "GameFramework/Character.h"
 #include "TPSPlayer.generated.h"
 
+DECLARE_MULTICAST_DELEGATE_OneParam(FInputBindingDelegate, class UInputComponent*);
 
 UCLASS()
 class TPSPROJECT_API ATPSPlayer : public ACharacter
@@ -19,12 +20,13 @@ public:
 protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
-
+public:
+	FInputBindingDelegate onInputBindingDelegate;
 public:	
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;
 
-	// Called to bind functionality to input
+
 	// Called to bind functionality to input
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
 	UPROPERTY(VisibleAnywhere, Category = Camera)
@@ -46,37 +48,7 @@ public:
 	UPROPERTY(VisibleAnywhere, Category = GunMesh)
 	class UStaticMeshComponent* sniperComp;
 	
-	//bool bUsingGrenadeGun= true;
-	//void ChangeToGrenadeGun();
-	//void ChangeToSniperGun();
-
-	//void SniperAim();
-	//bool bSniperAim = false;
-	//UPROPERTY(EditDefaultsOnly, Category = SniperUI)
-	//	TSubclassOf<class UUserWidget> sniperUIFactory;// Default 만들기 
-
-	////스나이퍼 UI위젯 인스턴스
-	//UPROPERTY(EditDefaultsOnly, Category = SniperUI) // 이거 안하면 갈뷔지 게임 처리당함 
-	//class UUserWidget* _sniperUI;
-
-	//UPROPERTY(EditAnywhere,Category=BulletEffect)
-	//UParticleSystem* bulletEffectFactory;
-
-	////일반조준
-	//UPROPERTY(EditDefaultsOnly, Category = SniperUI)
-	//TSubclassOf<class UUserWidget> crosshairUIFactory;
-	////크로스헤어 인스턴스
-	//class UUserWidget* CrosshairUIWidget;
-
-	//
-
-	////카메라 셰이크 BP 저장 변수 
-	//UPROPERTY(EditDefaultsOnly, Category = CameraMotion)
-	//	TSubclassOf<class UCameraShakeBase> cameraShake;
-
-	////Gun fire sound
-	//UPROPERTY(EditDefaultsOnly, Category = Sound)
-	//	class USoundBase* bulletSound;
+	
 
 public:
 	//컴포넌트 등록
@@ -86,4 +58,24 @@ public:
 	//컴포넌트 등록
 	UPROPERTY(VisibleAnywhere, Category = Component)
 	class UPlayerBaseComponent* playerFire;
+
+	//현재 HP
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = health)
+	int32 hp;
+	//HP 초기값 
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = health)
+	int32 initialHP = 10;
+
+	//피격 당했을 때 처리 
+	UFUNCTION(BlueprintCallable, Category = helath)
+	void OnHitEvent();
+
+	UFUNCTION(BlueprintNativeEvent,BlueprintCallable, Category = health)
+	void OnGameOver();
+	//이거 해줘야 빌드가 됨
+	void OnGameOver_Implementation();
+
+	UFUNCTION(BlueprintImplementableEvent, BlueprintCallable, Category = Health)
+	void OnUsingGrenade(bool isGrenade);
+	
 };

@@ -6,6 +6,8 @@
 #include <Camera/CameraComponent.h>
 #include "PlayerMove.h"
 #include "PlayerFire.h"
+#include "TPSProject.h"
+#include <Kismet/GameplayStatics.h>
 // Sets default values
 ATPSPlayer::ATPSPlayer()
 {
@@ -56,10 +58,7 @@ ATPSPlayer::ATPSPlayer()
 		sniperComp->SetRelativeRotation(FRotator(0, 90, 0));
 		sniperComp->SetRelativeScale3D(FVector(0.15f));
 	}
-	
-	
-	playerMove = CreateDefaultSubobject<UPlayerMove>(TEXT("PlayerMove"));
-	playerFire = CreateDefaultSubobject<UPlayerFire>(TEXT("PlayerFire"));
+
 	
 }
 
@@ -68,20 +67,9 @@ void ATPSPlayer::BeginPlay()
 {
 	Super::BeginPlay();
 
-
-	//초기 속도 is 걷기 
-	//GetCharacterMovement()->MaxWalkSpeed = walkSpeed;
+	hp = initialHP;
 
 
-	//_sniperUI = CreateWidget(GetWorld(), sniperUIFactory); // 블루프린트의 sniperUIFactory에 등록된 BP 스나이퍼 UI를 만들어서 추가한다, 
-
-	//위와 같다 
-	//CrosshairUIWidget = CreateWidget(GetWorld(), crosshairUIFactory);
-	//뷰포트에 추가한다
-	//CrosshairUIWidget->AddToViewport();
-
-	//기본으로 스나이퍼가 먼저사용하도록 설정됨
-	//ChangeToSniperGun();
 }
 
 // Called every frame
@@ -98,168 +86,23 @@ void ATPSPlayer::SetupPlayerInputComponent(class UInputComponent* PlayerInputCom
 	Super::SetupPlayerInputComponent(PlayerInputComponent);
 
 	//컴포넌트에서 입력 바인딩 처리하도록 호출 
-	playerMove->SetupInputBinding(PlayerInputComponent);
-	playerFire->SetupInputBinding(PlayerInputComponent);
-	//PlayerInputComponent->BindAxis(TEXT("Turn"), this, &ATPSPlayer::Turn);
-	//PlayerInputComponent->BindAxis(TEXT("LookUp"), this, &ATPSPlayer::LookUp);
-	//PlayerInputComponent->BindAxis(TEXT("Horizontal"), this, &ATPSPlayer::InputHorizontal);
-	//PlayerInputComponent->BindAxis(TEXT("Vertical"), this, &ATPSPlayer::InputVertical);
-	//PlayerInputComponent->BindAction(TEXT("Jump"), IE_Pressed, this, &ATPSPlayer::InputJump);
-	//PlayerInputComponent->BindAction(TEXT("Run"), IE_Pressed, this, &ATPSPlayer::InputRun);
-	//PlayerInputComponent->BindAction(TEXT("Run"), IE_Released, this, &ATPSPlayer::InputRun);
-	//PlayerInputComponent->BindAction(TEXT("Fire"), IE_Pressed, this, &ATPSPlayer::InputFire);
-	//PlayerInputComponent->BindAction(TEXT("GrenadeGun"), IE_Pressed, this, &ATPSPlayer::ChangeToGrenadeGun);
-	//PlayerInputComponent->BindAction(TEXT("SniperGun"), IE_Pressed, this, &ATPSPlayer::ChangeToSniperGun);
-	//PlayerInputComponent->BindAction(TEXT("Sniper"), IE_Pressed, this, &ATPSPlayer::SniperAim);
-	//PlayerInputComponent->BindAction(TEXT("Sniper"), IE_Released, this, &ATPSPlayer::SniperAim);
-	
-
-
+	onInputBindingDelegate.Broadcast(PlayerInputComponent);
 }
-//void ATPSPlayer::InputHorizontal(float value)
-//
-//{
-//	direction.Y = value;
-//}
-//
-//void ATPSPlayer::InputVertical(float value)
-//{
-//	direction.X = value;
-//}
-//
-//void ATPSPlayer::InputJump()//BindAction Deligate는 매개변수가 없는 듯 
-//{
-//	Jump();//캐릭터 클래스에 이미 구현된 기능
-//}
-//
-//void ATPSPlayer::Move()
-//{
-//	
-//	
-//	direction = FTransform(GetActorRotation()).TransformVector(direction); // 콘트롤러가 아닌 이 액터 기준으로 임의 설정함, 하늘 보면 못 걷는다는게 말이 됨?
-//
-//	//FVector P0 = GetActorLocation();
-//	//FVector Vt = direction * walkSpeed * DeltaTime; //direction * walkSpeed => 방향 * 스칼라 
-//	//FVector P = P0 + Vt;
-//	//SetActorLocation(P);
-//	
-//	//UE_LOG(LogTemp, Warning, TEXT("X : %f, Y : %f , Z : %f "), direction.X, direction.Y, direction.Z);
-//	AddMovementInput(direction);
-//	direction = FVector::ZeroVector;
-//}
-
-//void ATPSPlayer::InputFire()
-//{
-//	//사운드 재생ㅇ
-//	UGameplayStatics::PlaySound2D(GetWorld(), bulletSound);
-//	//카메라 shake 
-//	APlayerController* controller = GetWorld()->GetFirstPlayerController();
-//	controller->PlayerCameraManager->StartCameraShake(cameraShake);
-//
-//	if (bUsingGrenadeGun)
-//	{
-//		FTransform firePosition = gunComp -> GetSocketTransform(TEXT("Fireposition"));
-//		GetWorld()->SpawnActor<ABullet>(bulletFactory, firePosition);
-//	}
-//	else
-//	{
-//		UPlayerAnim* anim = Cast<UPlayerAnim>(GetMesh()->GetAnimInstance());
-//		anim->PlayAttackAnim();
-//		FVector startPos = tpsCamComponent->GetComponentLocation(); //WorldSpace Return
-//		FVector endPos = startPos + tpsCamComponent->GetForwardVector() * 5000000.0f;
-//
-//		//충돌정보 변수
-//		FHitResult hitInfo;
-//		//충돌옵션 설정 변수 
-//		FCollisionQueryParams params;
-//		params.AddIgnoredActor(this);
-//
-//		bool bHit = GetWorld()->LineTraceSingleByChannel(hitInfo, startPos, endPos, ECC_Visibility, params); //ECC => Enum Collision Channel 
-//		
-//		if (bHit)
-//		{
-//			FTransform bulletTrans;
-//			bulletTrans.SetLocation(hitInfo.ImpactPoint);
-//			UGameplayStatics::SpawnEmitterAtLocation(GetWorld(), bulletEffectFactory, bulletTrans);
-//
-//			UPrimitiveComponent* hitComp = hitInfo.GetComponent();
-//			if (hitComp != nullptr&& hitComp->IsSimulatingPhysics())
-//			{
-//					FVector force = hitInfo.ImpactNormal* -1 * hitComp->GetMass() * 500000.0f;
-//					hitComp->AddForce(force);
-//					UE_LOG(TPS, Warning, TEXT("Hit_Box"));;
-//			}
-//			UObject* enemy = hitInfo.GetActor()->GetDefaultSubobjectByName("FSM");//CreateDefaultSubObject()에서 넣어준 이름 반환
-//			if (enemy != nullptr)
-//			{
-//				UEnemyFSM* enemyFSM = Cast<UEnemyFSM>(enemy);
-//				enemyFSM->OnDamageProcess();
-//				UE_LOG(TPS, Warning, TEXT("Hit_Enemy"));
-//			}
-//			
-//			
-//		//	UE_LOG(TPS, Warning, TEXT("%s"), *hitInfo.GetActor()->GetName());
-//			
-//		}
-//	}
-//	
-//}
-
-//void ATPSPlayer::ChangeToGrenadeGun()
-//{
-//	bUsingGrenadeGun = true;
-//	sniperComp->SetVisibility(false);
-//	gunComp->SetVisibility(true);
-//}
-//
-//void ATPSPlayer::ChangeToSniperGun()
-//{
-//	bUsingGrenadeGun = false;
-//	sniperComp->SetVisibility(true);
-//	gunComp->SetVisibility(false);
-//}
-//
-//void ATPSPlayer::SniperAim() // 여기서 고장나는데 왜 고장나지 
-//{
-//	if (bUsingGrenadeGun)
-//	{
-//		return;
-//	}
-//	if (bSniperAim == false)
-//	{
-//		bSniperAim =true;
-//	
-//		_sniperUI->AddToViewport();
-//		tpsCamComponent->SetFieldOfView(45.0f);
-//
-//		//일반조준 제거 
-//		CrosshairUIWidget->RemoveFromParent();
-//	}
-//	else
-//	{
-//		bSniperAim = false;
-//		
-//		_sniperUI->RemoveFromParent();
-//		
-//		tpsCamComponent->SetFieldOfView(90.0f);
-//		
-//		CrosshairUIWidget->AddToViewport();
-//		
-//	}
-//}
-
-//void ATPSPlayer::InputRun()
-//{
-//	UCharacterMovementComponent* movement = GetCharacterMovement();
-//
-//	if (movement->MaxWalkSpeed > walkSpeed)
-//	{
-//		movement->MaxWalkSpeed = walkSpeed;
-//	}
-//	else
-//	{
-//		movement->MaxWalkSpeed = runSpeed;
-//	}
-//	
-//}
+void ATPSPlayer::OnHitEvent()
+{
+	PRINT_LOG(TEXT("Damaged"));
+	hp--;
+	if (hp <= 0)
+	{
+		PRINT_LOG(TEXT("PLAYER IS DEAD"));
+		OnGameOver();
+	}
+}
+//BlueprintNativeEvnent => _Implementation 붙여서 구현 해야함
+void ATPSPlayer::OnGameOver_Implementation()
+{
+	//게임오버시 일시정지
+	UGameplayStatics::SetGamePaused(GetWorld(), true);
+	PRINT_LOG(TEXT("the world"));
+}
 

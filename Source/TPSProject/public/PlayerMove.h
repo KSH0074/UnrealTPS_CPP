@@ -9,7 +9,7 @@
 /**
  * 
  */
-UCLASS()
+UCLASS(ClassGroup=(PlayerComponent),meta =(BlueprintSpawnableComponent))
 class TPSPROJECT_API UPlayerMove : public UPlayerBaseComponent
 {
 	GENERATED_BODY()

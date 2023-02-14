@@ -105,24 +105,24 @@ void UEnemyFSM::MoveState()
 	{
 		//타깃으로 이동 
 		ai->MoveToLocation(destination);
-		UE_LOG(TPS, Warning, TEXT("move to taget"));
+		//UE_LOG(TPS, Warning, TEXT("move to taget"));
 	}
 	else
 	{
 		//랜덤위치로 이동 
 		auto result = ai->MoveToLocation(randomPos);
-		UE_LOG(TPS, Warning, TEXT("RandomPos : %s"), *randomPos.ToString());
+		//UE_LOG(TPS, Warning, TEXT("RandomPos : %s"), *randomPos.ToString());
 		//목적지에 도착하면 
 		if (result == EPathFollowingRequestResult::AlreadyAtGoal)
 		{
 			//새로운 랜덤위치 가져오기 
 			GetRandomPositionInNavMesh(me->GetActorLocation(), 500, randomPos);
-			UE_LOG(TPS, Warning, TEXT("destination set to random"));
+		//	UE_LOG(TPS, Warning, TEXT("destination set to random"));
 		}
 		//갑자기 제자리 걸음 할때 방지 
 		else if (result == EPathFollowingRequestResult::Failed)
 		{
-			UE_LOG(TPS, Warning, TEXT("Move Failed"));
+			//UE_LOG(TPS, Warning, TEXT("Move Failed"));
 			GetRandomPositionInNavMesh(me->GetActorLocation(), 500, randomPos);
 		}
 	
@@ -151,7 +151,6 @@ void UEnemyFSM::AttackState()
 	currentTIme += GetWorld()->DeltaTimeSeconds;
 	if (currentTIme > attackDelayTime)
 	{
-		PRINT_LOG(TEXT("Attack!!"));
 		currentTIme = 0;
 		anim->bAttackPlay = true;
 	}
