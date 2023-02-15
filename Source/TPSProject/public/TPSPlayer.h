@@ -67,7 +67,7 @@ public:
 	int32 initialHP = 10;
 
 	//피격 당했을 때 처리 
-	UFUNCTION(BlueprintCallable, Category = helath)
+	UFUNCTION(BlueprintCallable, Category = health)
 	void OnHitEvent();
 
 	UFUNCTION(BlueprintNativeEvent,BlueprintCallable, Category = health)
@@ -75,7 +75,7 @@ public:
 	//이거 해줘야 빌드가 됨
 	void OnGameOver_Implementation();
 
-	UFUNCTION(BlueprintImplementableEvent, BlueprintCallable, Category = Health)
+	UFUNCTION(BlueprintImplementableEvent, BlueprintCallable, Category = health)
 	void OnUsingGrenade(bool isGrenade);
 	
 };
